@@ -49,13 +49,13 @@
 
 #' df2 <- bind_cols( Time = e, Sensor1 = f, Sensor2 = g, Sensor3 = h)
 
-#' collapse_data(df1)
+#' transform_diagonal_data(df1)
 
-#' collapse_data(df2)
+#' transform_diagonal_data(df2)
 #' 
 #' More tests can be added
 
-collapse_data <- function(x){
+transform_diagonal_data <- function(x){
     #Test if any row contains more than one numeric value
     count_numeric <- function(x) sum(!is.na(x) && is.numeric(x))
     
@@ -64,23 +64,24 @@ collapse_data <- function(x){
         summarise_all(count_numeric) %>%
         rowSums(.) == 1
     
-    if(any(test1 == FALSE)){
+    if(any(test1 == FALSE)){    ##any is because test1 has a value for each row
         return(cat(paste("Error 1: Row", which(test1 == FALSE), # if you remove `return` here, the warning will not kill the process
                          "contains multiple readings\n"))) # using cat means that if multiple rows fail, you will get a unique error for each.
     }
     
     #Test if any time/sensor has more than one numeric value
     test2 <- x %>%
-        gather(key = sensor, value = data, - Time) %>%
-        group_by(Time, sensor) %>% na.omit %>%
-        tally
+        gather(key = sensor, value = data, - Time) %>%    # tidy format - puts all readings in one column with two parallel column of sensor names and times
+        group_by(Time, sensor) %>%     #sets up grouping for next pipe
+        na.omit %>%    # count numeric values for each sensor for each timepoint
+        tally    # removes rows with NA's, keeping numeric data for each sensor for each timepoint
     if(any(test2$n > 1)){
         return(cat(paste("Error 2:", filter(test2, n > 1) %>% pull(sensor),  #this warning may need to be editted a bit for real data
                          "contains multiple readings for time step",
                          filter(test2, n > 1) %>% pull(Time), "\n")))
     }
     
-    # Pass tests? collapse and return data!
+    # If tests pass, transform and return data!
     df <- x %>%
         group_by(Time) %>%
         summarise_all(funs(sum), na.rm = TRUE)
