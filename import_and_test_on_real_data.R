@@ -10,5 +10,5 @@ summary(raw_vav)
 raw_vav_subset <- raw_vav[1:10,]
 
 #Note that this outputs a tibble with the Time column as type chronological
-vav <- transform_diagonal_data(raw_vav_subset)
+vav <- transform_diagonal_data(raw_vav)
 vav
